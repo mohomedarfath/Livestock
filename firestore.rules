@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isOrgMember(orgId) {
+      return signedIn() && exists(
+        /databases/$(database)/documents/memberships/$(orgId + '_' + request.auth.uid)
+      );
+    }
+
+    function membershipOf(orgId) {
+      return get(
+        /databases/$(database)/documents/memberships/$(orgId + '_' + request.auth.uid)
+      ).data;
+    }
+
+    function isOrgAdmin(orgId) {
+      return isOrgMember(orgId) && membershipOf(orgId).role == 'admin';
+    }
+
+    // -------- User profiles --------
+    // Each user owns exactly /users/{uid} and may read/write only their own doc.
+    // This is required by authService.mapFirebaseUser and saveFirebaseUserProfile.
+    match /users/{userId} {
+      allow read, write: if isSelf(userId);
+    }
+
+    // -------- Memberships --------
+    // Document id is the deterministic "${orgId}_${uid}" pattern used by
+    // tenantRepository.createOrganization. The body must carry { userId, organizationId, role }.
+    //
+    // Reads: a user may read a membership row that belongs to them. The
+    // listMemberships query filters by `where('userId', '==', uid)` which
+    // matches this rule for the list operation as well.
+    //
+    // Create: a user may create only their own membership row (used during
+    // first-org bootstrap right after creating the organization).
+    //
+    // Update/Delete: only an existing admin of the same organization may
+    // change membership rows (including their own role) for that org.
+    match /memberships/{membershipId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.organizationId is string
+        && membershipId == request.resource.data.organizationId + '_' + request.auth.uid;
+
+      allow update, delete: if signedIn()
+        && isOrgAdmin(resource.data.organizationId);
+    }
+
+    // -------- Organizations (tenants) --------
+    match /organizations/{orgId} {
+      // Any signed-in user may create a new organization (first-time
+      // workspace bootstrap). The accompanying /memberships/{orgId}_{uid}
+      // doc is written immediately afterwards by tenantRepository.
+      allow create: if signedIn();
+
+      // Members may read the org; admins may update/delete it.
+      allow read:   if isOrgMember(orgId);
+      allow update: if isOrgAdmin(orgId);
+      allow delete: if isOrgAdmin(orgId);
+
+      // All nested data (flocks, sales, expenses, dailyLogs, employees,
+      // vaccinations, budgets, wages, feedPurchases, activities,
+      // farmInventory, settings, etc.) is accessible to org members.
+      // Pattern requires at least one collection + one document segment so
+      // it cannot grant write access to the parent /organizations/{orgId}
+      // doc itself (admin-only via the rule above).
+      match /{collection}/{docId=**} {
+        allow read, write: if isOrgMember(orgId);
+      }
+    }
+
+    // -------- Default deny --------
+    // Anything not matched above is implicitly denied.
+  }
+}

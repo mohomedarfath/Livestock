@@ -1,0 +1,27 @@
+# CluckTrack Massive Upgrade Project
+
+## Phase 1: Dependency & Tooling Modernization 🛠️
+- [ ] Upgrade Vite (`vite` to v5+, `@vitejs/plugin-react`)
+- [ ] Upgrade Tailwind CSS to v3.4+
+- [ ] Install React Router (`react-router-dom`)
+- [ ] Install State Management (`zustand`)
+- [ ] Install Storage (`localforage`)
+- [ ] Install PWA Plugin (`vite-plugin-pwa`)
+- [ ] Setup Testing (`vitest`, `@testing-library/react`, `jsdom`)
+- [ ] Setup Linting (`eslint`, `prettier`)
+
+## Phase 2: Architecture Refactoring 🏗️
+- [ ] Create asynchronous `LocalForage` wrapper to replace / augment synchronous `Storage` class in `src/utils/storage.js/jsx`.
+- [ ] Wrap application with `BrowserRouter` in [src/main.jsx](file:///d:/Projects/clucktrack/src/main.jsx).
+- [ ] Refactor [App.jsx](file:///d:/Projects/clucktrack/src/App.jsx):
+  - [ ] Extract `<ThemeSwitcher />`, Sidebar, and Top Header components to `src/components/layout/`.
+  - [ ] Extract Layout template into `src/components/layout/MainLayout.jsx`.
+  - [ ] Convert [AppInner](file:///d:/Projects/clucktrack/src/App.jsx#166-451) switch statements into proper `react-router-dom` `<Routes>` and `<Route>`.
+
+## Phase 3: PWA Setup 📱
+- [ ] Configure `vite-plugin-pwa` in [vite.config.js](file:///d:/Projects/clucktrack/vite.config.js) to enable offline service workers.
+- [ ] Ensure web manifest icons are properly hooked up.
+
+## Phase 4: State Migration (Optional / Next Steps) 🔄
+- [ ] Migrate Contexts (AuthContext, ThemeContext) to `zustand` stores for better performance.
+- [ ] Migrate [.jsx](file:///d:/Projects/clucktrack/src/App.jsx) files to TypeScript `.tsx` incrementally.

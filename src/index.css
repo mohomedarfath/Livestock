@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    box-sizing: border-box;
+  }
+  :root {
+    --accent-ink: #9B4A2E;
+    --color-success-50: #ECFDF3;
+    --color-success-500: #17B26A;
+    --color-success-700: #067647;
+    --color-warning-50: #FFFAEB;
+    --color-warning-500: #F79009;
+    --color-warning-700: #B54708;
+    --color-danger-50: #FEF3F2;
+    --color-danger-500: #F04438;
+    --color-danger-700: #B42318;
+    --color-info-50: #EFF8FF;
+    --color-info-500: #2E90FA;
+    --color-info-700: #175CD3;
+    --chart-orange: #f97316;
+    --chart-blue: #3b82f6;
+    --chart-green: #22c55e;
+    --chart-red: #ef4444;
+    --chart-violet: #8b5cf6;
+    --shadow-focus: 0 0 0 3px color-mix(in srgb, var(--accent) 55%, transparent);
+    --motion-fast: 120ms cubic-bezier(.4, 0, .2, 1);
+    --motion-base: 180ms cubic-bezier(.4, 0, .2, 1);
+  }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    width: 100%;
+    font-size: 16px;
+    line-height: 1.5;
+    background-color: var(--bg, #edeade);
+    overscroll-behavior: none;
+  }
+
+  #root {
+    min-height: 100vh;
+    background-color: var(--bg, #edeade);
+  }
+}
+
+@layer components {
+  /* ── Card ─────────────────────────────────────────────────── */
+  .card {
+    @apply rounded-lg p-5;
+    background: var(--surface, #ffffff);
+    border: 1px solid color-mix(in srgb, var(--border, #e2ddd5) 72%, transparent);
+    box-shadow: 0 1px 2px var(--shadow-color, rgba(80,50,20,.08)),
+                0 2px 8px var(--shadow-color, rgba(80,50,20,.05));
+    transition: box-shadow var(--motion-base);
+  }
+  .card:hover {
+    box-shadow: 0 2px 4px var(--shadow-md, rgba(80,50,20,.12)),
+                0 6px 16px var(--shadow-color, rgba(80,50,20,.08));
+  }
+
+  /* ── Buttons ──────────────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-3 rounded-lg font-medium text-sm text-white
+           active:scale-[0.97] transition-all duration-150 cursor-pointer;
+    min-height: 44px;
+    background: linear-gradient(135deg, var(--accent, #c8785a) 0%, var(--accent-dark, #b06048) 100%);
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 4px 12px var(--shadow-md, rgba(200,120,90,.28));
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-3 rounded-lg font-medium text-sm
+           border active:scale-[0.97]
+           transition-all duration-150 cursor-pointer;
+    min-height: 44px;
+    background: var(--surface, #ffffff);
+    color: var(--text-muted, #374151);
+    border-color: var(--border, #e5e7eb);
+  }
+  .btn-secondary:hover {
+    background: var(--surface-2, #f9fafb);
+  }
+
+  .btn-primary:focus-visible,
+  .btn-secondary:focus-visible,
+  .focus-ring:focus-visible,
+  a:focus-visible,
+  button:focus-visible,
+  select:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  .link-accent {
+    color: var(--accent-ink);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .link-accent:hover {
+    text-decoration-line: underline;
+  }
+
+  /* ── Input ────────────────────────────────────────────────── */
+  .input-field {
+    @apply w-full px-3 py-3 rounded-lg text-sm
+           focus:outline-none
+           transition-all duration-150;
+    min-height: 44px;
+    background: var(--input-bg, #ffffff);
+    border: 1px solid var(--border, #d1d5db);
+    color: var(--text, #111827);
+  }
+  .input-field::placeholder {
+    color: var(--text-dim, #9ca3af);
+  }
+  .input-field:focus {
+    border-color: var(--accent, #c8785a);
+    box-shadow: var(--shadow-focus);
+  }
+
+  .page-title {
+    @apply text-[1.75rem] md:text-[2rem] leading-tight font-bold;
+    color: var(--text);
+  }
+
+  .page-subtitle {
+    @apply text-sm md:text-base;
+    color: var(--text-muted);
+  }
+
+  .label-text {
+    @apply text-[0.8125rem] leading-5 font-semibold;
+    color: var(--text-muted);
+  }
+}
+
+/* ── Global background & text ─────────────────────────────── */
+body {
+  background-color: var(--bg, #edeade);
+  color: var(--text, #3d3830);
+  font-family: "Google Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar            { width: 6px; height: 6px; }
+::-webkit-scrollbar-track      { background: transparent; }
+::-webkit-scrollbar-thumb      { background: var(--scrollbar, #d5cfc6); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover{ background: var(--border, #b8b0a6); }
