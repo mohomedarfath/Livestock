@@ -1,6 +1,6 @@
 import { APP_MODULES, MODULE_BY_ID } from './modules'
 
-export const SYSTEM_ROLE_ORDER = ['admin', 'manager', 'employee', 'accountant']
+export const SYSTEM_ROLE_ORDER = ['admin', 'manager', 'employee', 'accountant', 'shop_manager', 'cashier']
 
 export const SYSTEM_ROLE_META = {
   admin: {
@@ -31,6 +31,26 @@ export const SYSTEM_ROLE_META = {
     baseRole: 'accountant',
     isSystem: true,
   },
+  shop_manager: {
+    key: 'shop_manager',
+    name: 'Shop Manager',
+    description: 'Runs shop products, orders, customers, and stock transfers.',
+    baseRole: 'shop_manager',
+    isSystem: true,
+  },
+  cashier: {
+    key: 'cashier',
+    name: 'Cashier',
+    description: 'Records customer orders at the shop counter.',
+    baseRole: 'cashier',
+    isSystem: true,
+  },
+}
+
+export function workspacesForRole(roleKey) {
+  if (['shop_manager', 'cashier'].includes(roleKey)) return ['shop']
+  if (['admin', 'manager', 'accountant', 'super_admin'].includes(roleKey)) return ['farm', 'shop']
+  return ['farm']
 }
 
 function defaultModulesForRole(roleKey) {

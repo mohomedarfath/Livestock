@@ -30,6 +30,9 @@ const WORKSPACE_KEYS = [
   'clucktrack_resources',
   'clucktrack_fcr',
   'clucktrack_whatsapp_phone',
+  'livestocktrack_shop_products',
+  'livestocktrack_shop_orders',
+  'livestocktrack_shop_customers',
 ]
 
 function clone(value) {
@@ -252,6 +255,24 @@ function defaultUsers() {
       createdAt: '2026-03-01',
     },
     {
+      id: 'u7',
+      name: 'Shop Manager',
+      email: 'shop@farm.com',
+      password: 'shop123',
+      role: 'shop_manager',
+      active: true,
+      createdAt: '2026-03-01',
+    },
+    {
+      id: 'u8',
+      name: 'Cashier User',
+      email: 'cashier@farm.com',
+      password: 'cashier123',
+      role: 'cashier',
+      active: true,
+      createdAt: '2026-03-01',
+    },
+    {
       id: 'u5',
       name: 'Sunrise Admin',
       email: 'owner@sunrisefarm.com',
@@ -303,6 +324,22 @@ function defaultMemberships() {
       user_id: 'u4',
       organization_id: 'legacy-farm',
       role: 'accountant',
+      active: true,
+      createdAt: '2026-03-01',
+    },
+    {
+      id: 'm7',
+      user_id: 'u7',
+      organization_id: 'legacy-farm',
+      role: 'shop_manager',
+      active: true,
+      createdAt: '2026-03-01',
+    },
+    {
+      id: 'm8',
+      user_id: 'u8',
+      organization_id: 'legacy-farm',
+      role: 'cashier',
       active: true,
       createdAt: '2026-03-01',
     },
@@ -394,7 +431,32 @@ function buildInitialState() {
 
 function ensureState() {
   const existing = getState()
-  if (existing) return existing
+  if (existing) {
+    let changed = false
+    const usersById = new Set((existing.users || []).map((user) => user.id))
+    defaultUsers().forEach((user) => {
+      if (!usersById.has(user.id)) {
+        existing.users.push(user)
+        changed = true
+      }
+    })
+
+    const membershipsById = new Set((existing.memberships || []).map((membership) => membership.id))
+    defaultMemberships().forEach((membership) => {
+      if (!membershipsById.has(membership.id)) {
+        existing.memberships.push(membership)
+        changed = true
+      }
+    })
+
+    if (changed) {
+      ;(existing.organizations || []).forEach((organization) => syncTenantUsersIntoSnapshot(existing, organization.id))
+      setState(existing)
+      if (existing.activeTenantId) hydrateWorkspaceSnapshot(existing.snapshots[existing.activeTenantId] || {})
+    }
+
+    return existing
+  }
 
   const initialState = buildInitialState()
   setState(initialState)

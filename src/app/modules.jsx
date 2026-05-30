@@ -31,6 +31,10 @@ const MilkPassbook = lazy(() => import('../pages/cow/MilkPassbook.jsx'))
 const CowBreedingCalendar = lazy(() => import('../pages/cow/CowBreedingCalendar.jsx'))
 const CowHealthLog = lazy(() => import('../pages/cow/CowHealthLog.jsx'))
 const CowProfitability = lazy(() => import('../pages/cow/CowProfitability.jsx'))
+const ShopDashboard = lazy(() => import('../pages/shop/ShopDashboard.jsx'))
+const ShopProducts = lazy(() => import('../pages/shop/ShopProducts.jsx'))
+const ShopOrders = lazy(() => import('../pages/shop/ShopOrders.jsx'))
+const ShopCustomers = lazy(() => import('../pages/shop/ShopCustomers.jsx'))
 
 export const APP_MODULES = [
   {
@@ -40,7 +44,8 @@ export const APP_MODULES = [
     title: 'Dashboard',
     icon: 'Home',
     group: null,
-    roles: ['admin', 'manager', 'employee', 'accountant'],
+    roles: ['admin', 'manager', 'employee', 'accountant', 'shop_manager', 'cashier'],
+    workspace: 'all',
     phase: 1,
     navigationAware: true,
     component: RoleDashboard,
@@ -320,6 +325,54 @@ export const APP_MODULES = [
     roles: ['admin'],
     phase: 1,
     component: SystemSettings,
+  },
+  {
+    id: 'shop-dashboard',
+    path: '/app/shop',
+    label: 'Shop Dashboard',
+    title: 'Shop Dashboard',
+    icon: 'ShoppingCart',
+    group: 'Shop',
+    roles: ['admin', 'manager', 'shop_manager', 'cashier', 'accountant'],
+    workspace: 'shop',
+    phase: 1,
+    component: ShopDashboard,
+  },
+  {
+    id: 'shop-products',
+    path: '/app/shop/products',
+    label: 'Products',
+    title: 'Shop Products',
+    icon: 'Package',
+    group: 'Shop',
+    roles: ['admin', 'manager', 'shop_manager'],
+    workspace: 'shop',
+    phase: 1,
+    component: ShopProducts,
+  },
+  {
+    id: 'shop-orders',
+    path: '/app/shop/orders',
+    label: 'Orders / POS',
+    title: 'Orders & Point of Sale',
+    icon: 'ReceiptText',
+    group: 'Shop',
+    roles: ['admin', 'manager', 'shop_manager', 'cashier'],
+    workspace: 'shop',
+    phase: 1,
+    component: ShopOrders,
+  },
+  {
+    id: 'shop-customers',
+    path: '/app/shop/customers',
+    label: 'Customers',
+    title: 'Shop Customers',
+    icon: 'Users',
+    group: 'Shop',
+    roles: ['admin', 'manager', 'shop_manager', 'cashier'],
+    workspace: 'shop',
+    phase: 1,
+    component: ShopCustomers,
   },
   {
     id: 'compliance',

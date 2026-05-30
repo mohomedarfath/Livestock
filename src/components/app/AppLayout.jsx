@@ -12,8 +12,11 @@ import { Badge, CommandPalette, IconButton, Skeleton } from '../ui'
 import AnimalTypeSwitcher from '../animal/AnimalTypeSwitcher'
 import { useAnimalType } from '../../animal/AnimalTypeContext'
 import { animalizeModule, isModuleEnabledForAnimalType } from '../../animal/animalTypes'
+import WorkspaceSwitcher from '../workspace/WorkspaceSwitcher'
+import { useWorkspaceMode } from '../../workspace/WorkspaceModeContext'
+import { isModuleEnabledForWorkspace } from '../../workspace/workspaceModes'
 
-const NAV_GROUP_ORDER = ['Farm Operations', 'Health & Feed', 'Inventory', 'Finance', 'People', 'Administration']
+const NAV_GROUP_ORDER = ['Farm Operations', 'Shop', 'Health & Feed', 'Inventory', 'Finance', 'People', 'Administration']
 
 function syncBadgeDetails(syncState, pendingWrites) {
   if (pendingWrites > 0) {
@@ -238,6 +241,7 @@ export default function AppLayout() {
   } = useTenant()
   const { pendingWrites, syncState, lastError, clearSyncError } = useSyncStatus()
   const { selectedAnimalType, enabledAnimalTypes, animalTypeDetails } = useAnimalType()
+  const { workspaceMode } = useWorkspaceMode()
   const { canInstall, promptInstall } = useInstallPrompt()
   const { settings: orgSettings, loading: orgSettingsLoading } = useOrganizationSettings()
   const farmLogo = orgSettingsLoading ? null : orgSettings?.logo
@@ -252,9 +256,10 @@ export default function AppLayout() {
     () =>
       accessibleModules
         .filter((module) => module.nav !== false)
+        .filter((module) => isModuleEnabledForWorkspace(module, workspaceMode))
         .filter((module) => isModuleEnabledForAnimalType(module.id, selectedAnimalType, enabledAnimalTypes))
         .map((module) => animalizeModule(module, animalTypeDetails)),
-    [accessibleModules, animalTypeDetails, enabledAnimalTypes, selectedAnimalType]
+    [accessibleModules, animalTypeDetails, enabledAnimalTypes, selectedAnimalType, workspaceMode]
   )
   const ungroupedModules = useMemo(() => visibleModules.filter((module) => !module.group), [visibleModules])
   const groupedModules = useMemo(
@@ -537,7 +542,8 @@ export default function AppLayout() {
                 Install app
               </button>
             )}
-            <AnimalTypeSwitcher />
+            <WorkspaceSwitcher />
+            {workspaceMode === 'farm' && <AnimalTypeSwitcher />}
             <ThemeSwitcher />
             <CurrencySwitcher />
           </div>

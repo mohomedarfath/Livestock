@@ -30,6 +30,8 @@ const DEMO_ACCOUNTS = [
   { label: 'Manager', email: 'manager@farm.com', password: 'manager123' },
   { label: 'Employee', email: 'emp@farm.com', password: 'emp123' },
   { label: 'Accountant', email: 'acc@farm.com', password: 'acc123' },
+  { label: 'Shop manager', email: 'shop@farm.com', password: 'shop123' },
+  { label: 'Cashier', email: 'cashier@farm.com', password: 'cashier123' },
   { label: 'Sunrise admin', email: 'owner@sunrisefarm.com', password: 'sunrise123' },
   { label: 'Hilltop manager', email: 'ops@hilltoplayers.com', password: 'hilltop123' },
 ]

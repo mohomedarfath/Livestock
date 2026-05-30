@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { TenantProvider, useTenant } from './context/TenantContext'
 import { SyncStatusProvider } from './context/SyncStatusContext'
 import { AnimalTypeProvider } from './animal/AnimalTypeContext'
+import { WorkspaceModeProvider, useWorkspaceMode } from './workspace/WorkspaceModeContext'
+import { isModuleEnabledForWorkspace } from './workspace/workspaceModes'
 import LoginPage from './pages/LoginPage'
 import OnboardingPage from './pages/OnboardingPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -16,8 +18,9 @@ import { ConfirmProvider, ToastProvider } from './components/ui'
 function FeaturePage({ module }) {
   const navigate = useNavigate()
   const { canAccessModule } = useTenant()
+  const { workspaceMode } = useWorkspaceMode()
 
-  if (!canAccessModule(module.id)) {
+  if (!canAccessModule(module.id) || !isModuleEnabledForWorkspace(module, workspaceMode)) {
     return <Navigate to="/app" replace />
   }
 
@@ -103,13 +106,15 @@ export default function App() {
     <AuthProvider>
       <TenantProvider>
         <SyncStatusProvider>
-          <AnimalTypeProvider>
-            <ConfirmProvider>
-              <ToastProvider>
-                <AppRoutes />
-              </ToastProvider>
-            </ConfirmProvider>
-          </AnimalTypeProvider>
+          <WorkspaceModeProvider>
+            <AnimalTypeProvider>
+              <ConfirmProvider>
+                <ToastProvider>
+                  <AppRoutes />
+                </ToastProvider>
+              </ConfirmProvider>
+            </AnimalTypeProvider>
+          </WorkspaceModeProvider>
         </SyncStatusProvider>
       </TenantProvider>
     </AuthProvider>

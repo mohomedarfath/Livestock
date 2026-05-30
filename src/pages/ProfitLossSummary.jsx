@@ -25,7 +25,7 @@ export default function ProfitLossSummary() {
   const summaries = useMemo(() => {
     const totalBirds = flocks.reduce((sum, flock) => sum + (flock.count || 0), 0)
 
-    return flocks.map((flock) => {
+    const flockSummaries = flocks.map((flock) => {
       const flockSales = sales.filter((sale) => sale.flockId === flock.id || sale.flockName === flock.name || sale.flock === flock.name)
       const revenue = flockSales.reduce((sum, sale) => sum + (sale.totalPrice || 0), 0)
 
@@ -58,6 +58,26 @@ export default function ProfitLossSummary() {
         salesCount: flockSales.length,
       }
     })
+
+    const retailSales = sales.filter((sale) => sale.type === 'shop_order')
+    const retailRevenue = retailSales.reduce((sum, sale) => sum + (sale.totalPrice || 0), 0)
+
+    if (retailSales.length > 0) {
+      flockSummaries.push({
+        flockId: 'shop-retail',
+        flockName: 'Shop Retail Orders',
+        revenue: retailRevenue,
+        feedCost: 0,
+        medicineCost: 0,
+        labourCost: 0,
+        totalCost: 0,
+        profit: retailRevenue,
+        profitPerBird: 0,
+        salesCount: retailSales.length,
+      })
+    }
+
+    return flockSummaries
   }, [feedPurchases, flocks, medicineLog, sales])
 
   const overallStats = useMemo(() => {

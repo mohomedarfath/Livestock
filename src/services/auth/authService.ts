@@ -17,7 +17,7 @@ import {
 } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { platformRepository } from '../repositories/platformRepository'
-import { clearTenantSession } from '../repositories/tenantSession'
+import { clearTenantSession, updateTenantSession } from '../repositories/tenantSession'
 
 function mapLegacyUser(user) {
   return {
@@ -76,6 +76,109 @@ async function saveFirebaseUserProfile(firebaseUser: User, { fullName, role = 'a
   }, { merge: true })
 }
 
+const FIREBASE_DEMO_USERS = {
+  'shop@farm.com': {
+    password: 'shop123',
+    name: 'Shop Manager',
+    role: 'shop_manager',
+  },
+  'cashier@farm.com': {
+    password: 'cashier123',
+    name: 'Cashier User',
+    role: 'cashier',
+  },
+}
+
+async function ensureFirebaseDemoTenant(firebaseUser: User, role: string) {
+  if (!db || !firebaseUser.uid) return
+
+  const organizationId = 'legacy-farm'
+  const membershipRef = doc(db, 'memberships', `${organizationId}_${firebaseUser.uid}`)
+  const membershipSnap = await getDoc(membershipRef)
+  if (!membershipSnap.exists()) {
+    await setDoc(membershipRef, {
+      userId: firebaseUser.uid,
+      organizationId,
+      role,
+      active: true,
+      clientCreatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
+  const organizationRef = doc(db, 'organizations', organizationId)
+  const organizationSnap = await getDoc(organizationRef)
+  if (!organizationSnap.exists()) {
+    await setDoc(organizationRef, {
+      name: 'Legacy Demo Farm',
+      slug: 'legacy-demo-farm',
+      plan: 'growth',
+      billing_status: 'active',
+      clientCreatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+  }
+}
+
+function demoUserPayload(firebaseUser: User, demo: { name: string; role: string }) {
+  return {
+    id: firebaseUser.uid,
+    email: firebaseUser.email || '',
+    name: demo.name,
+    role: demo.role,
+    platformRole: null,
+    active: true,
+  }
+}
+
+function notifyTenantAccessUpdated() {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent('clucktrack:tenant-access-updated'))
+}
+
+function provisionFirebaseDemoInBackground(firebaseUser: User, demo: { name: string; role: string }) {
+  updateTenantSession((session) => ({
+    ...session,
+    activeOrganizationId: 'legacy-farm',
+    impersonation: null,
+  }))
+
+  const task = (async () => {
+    await saveFirebaseUserProfile(firebaseUser, { fullName: demo.name, role: demo.role })
+    await ensureFirebaseDemoTenant(firebaseUser, demo.role)
+    notifyTenantAccessUpdated()
+  })()
+
+  task.catch((error) => {
+    console.warn('Demo user provisioning failed:', error?.message || error)
+  })
+
+  return task
+}
+
+async function signInOrCreateFirebaseDemoUser(email: string, password: string) {
+  const demo = FIREBASE_DEMO_USERS[email.toLowerCase()]
+  if (!demo || demo.password !== password || !auth) return null
+
+  try {
+    const credential = await signInWithEmailAndPassword(auth, email, password)
+    provisionFirebaseDemoInBackground(credential.user, demo)
+    return { success: true, user: demoUserPayload(credential.user, demo) }
+  } catch (error: any) {
+    const canCreate =
+      error?.code === 'auth/invalid-credential' ||
+      error?.code === 'auth/user-not-found' ||
+      error?.code === 'auth/invalid-login-credentials'
+
+    if (!canCreate) return { success: false, error: error.message }
+
+    const credential = await createUserWithEmailAndPassword(auth, email, password)
+    await updateProfile(credential.user, { displayName: demo.name })
+    provisionFirebaseDemoInBackground(credential.user, demo)
+    return { success: true, user: demoUserPayload(credential.user, demo) }
+  }
+}
+
 export function buildPasswordResetRedirect(origin: string) {
   return `${origin}/auth/reset-password`
 }
@@ -123,8 +226,15 @@ export const authService = {
     if (isFirebaseConfigured && auth) {
       try {
         const credential = await signInWithEmailAndPassword(auth, email, password)
+        const demo = FIREBASE_DEMO_USERS[email.toLowerCase()]
+        if (demo) {
+          provisionFirebaseDemoInBackground(credential.user, demo)
+          return { success: true, user: demoUserPayload(credential.user, demo) }
+        }
         return { success: true, user: await mapFirebaseUser(credential.user) }
       } catch (error: any) {
+        const demoResult = await signInOrCreateFirebaseDemoUser(email, password)
+        if (demoResult) return demoResult
         return { success: false, error: error.message }
       }
     }
