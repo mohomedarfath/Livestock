@@ -11,6 +11,14 @@ function todayKey() {
   return new Date().toISOString().split('T')[0]
 }
 
+function daysUntil(dateValue) {
+  if (!dateValue) return null
+  const today = new Date(todayKey())
+  const expiry = new Date(dateValue)
+  if (Number.isNaN(expiry.getTime())) return null
+  return Math.ceil((expiry - today) / 86400000)
+}
+
 export default function ShopDashboard() {
   const navigate = useNavigate()
   const { fmt } = useCurrency()
@@ -23,6 +31,11 @@ export default function ShopDashboard() {
   const todayOrders = orders.filter((order) => order.date === today)
   const todaySales = todayOrders.reduce((sum, order) => sum + Number(order.total || 0), 0)
   const lowStock = products.filter((product) => product.lowStockThreshold > 0 && product.stockQty <= product.lowStockThreshold)
+  const paymentDue = orders.reduce((sum, order) => sum + Number(order.balanceDue || 0), 0)
+  const expiringSoon = products
+    .map((product) => ({ ...product, daysToExpiry: daysUntil(product.expiryDate) }))
+    .filter((product) => product.daysToExpiry !== null && product.daysToExpiry <= 7)
+    .sort((left, right) => left.daysToExpiry - right.daysToExpiry)
 
   const topProducts = useMemo(() => {
     const thirtyDaysAgo = new Date()
@@ -107,7 +120,32 @@ export default function ShopDashboard() {
           <p className="text-sm text-[var(--text-muted)]">Low Stock</p>
           <p className="text-3xl font-bold mt-1" style={{ color: lowStock.length ? '#dc2626' : 'var(--text)' }}>{lowStock.length}</p>
         </div>
+        <div className="card">
+          <p className="text-sm text-[var(--text-muted)]">Customer Due</p>
+          <p className="text-3xl font-bold mt-1" style={{ color: paymentDue ? '#dc2626' : 'var(--text)' }}>{fmt(paymentDue)}</p>
+        </div>
+        <div className="card">
+          <p className="text-sm text-[var(--text-muted)]">Expiring Soon</p>
+          <p className="text-3xl font-bold mt-1" style={{ color: expiringSoon.length ? '#dc2626' : 'var(--text)' }}>{expiringSoon.length}</p>
+        </div>
       </div>
+
+      {expiringSoon.length > 0 && (
+        <section className="card">
+          <h2 className="text-lg font-bold text-[var(--text)] mb-3">Expiry Alerts</h2>
+          <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            {expiringSoon.slice(0, 6).map((product) => (
+              <div key={product.id} className="rounded-lg p-3" style={{ background: product.daysToExpiry < 0 ? '#fef2f2' : 'var(--surface-2)' }}>
+                <p className="font-semibold text-[var(--text)]">{product.name}</p>
+                <p className="text-sm text-[var(--text-muted)]">Batch: {product.batchNumber || 'No batch'}</p>
+                <p className="text-sm font-semibold" style={{ color: product.daysToExpiry < 0 ? '#dc2626' : 'var(--accent-ink)' }}>
+                  {product.daysToExpiry < 0 ? 'Expired' : `${product.daysToExpiry} day(s) left`} · {new Date(product.expiryDate).toLocaleDateString('en-IN')}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="card">
         <div className="flex items-start justify-between gap-3 flex-wrap mb-3">

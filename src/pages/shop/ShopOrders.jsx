@@ -3,6 +3,7 @@ import { useCurrency } from '../../utils/currency.jsx'
 import { useShopProducts } from '../../hooks/useShopProducts'
 import { useShopOrders } from '../../hooks/useShopOrders'
 import { useShopCustomers } from '../../hooks/useShopCustomers'
+import { PAYMENT_METHODS, calculateOrderPayment, paymentMethodLabel } from '../../shop/shopOrderPayments'
 
 function emptyLine() {
   return { productId: '', quantity: '1' }
@@ -16,6 +17,9 @@ export default function ShopOrders() {
   const [customerId, setCustomerId] = useState('')
   const [walkInName, setWalkInName] = useState('')
   const [lineItems, setLineItems] = useState([emptyLine()])
+  const [paymentMethod, setPaymentMethod] = useState('cash')
+  const [paidAmount, setPaidAmount] = useState('')
+  const [lastOrder, setLastOrder] = useState(null)
   const [notes, setNotes] = useState('')
   const [formError, setFormError] = useState('')
   const [message, setMessage] = useState('')
@@ -36,6 +40,11 @@ export default function ShopOrders() {
     }
   })
   const total = resolvedLines.reduce((sum, item) => sum + item.subtotal, 0)
+  const payment = calculateOrderPayment({
+    total,
+    paidAmount: paidAmount === '' ? (paymentMethod === 'credit' ? 0 : total) : paidAmount,
+    paymentMethod,
+  })
 
   function updateLine(index, updates) {
     setLineItems((current) => current.map((line, lineIndex) => lineIndex === index ? { ...line, ...updates } : line))
@@ -54,20 +63,27 @@ export default function ShopOrders() {
     if (lowStockLine) return setFormError(`Not enough ${lowStockLine.productName} in shop stock.`)
 
     try {
-      await createOrder({
+      const createdOrder = await createOrder({
         customerId: selectedCustomer?.id || null,
         customerName: selectedCustomer?.name || walkInName.trim() || 'Walk-in',
         date: new Date().toISOString().split('T')[0],
         lineItems: orderLines,
         total,
-        paymentMethod: 'cash',
+        paymentMethod,
+        paidAmount: payment.paidAmount,
+        balanceDue: payment.balanceDue,
+        changeDue: payment.changeDue,
+        paymentStatus: payment.paymentStatus,
         notes,
       })
       await reloadProducts()
       setCustomerId('')
       setWalkInName('')
       setLineItems([emptyLine()])
+      setPaymentMethod('cash')
+      setPaidAmount('')
       setNotes('')
+      setLastOrder(createdOrder)
       setMessage('Order saved and shop stock updated.')
     } catch (err) {
       setFormError(err.message || 'Failed to save order.')
@@ -137,6 +153,24 @@ export default function ShopOrders() {
           <p className="text-xl font-bold text-[var(--text)]">Total: {fmt(total)}</p>
         </div>
 
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="space-y-1">
+            <span className="label-text">Payment Method</span>
+            <select className="input-field" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
+              {PAYMENT_METHODS.map((method) => <option key={method.id} value={method.id}>{method.label}</option>)}
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="label-text">Paid Amount</span>
+            <input className="input-field" type="number" min="0" step="0.01" value={paidAmount} onChange={(event) => setPaidAmount(event.target.value)} placeholder={paymentMethod === 'credit' ? '0' : String(total)} />
+          </label>
+          <div className="rounded-lg p-3" style={{ background: 'var(--surface-2)' }}>
+            <span className="label-text">Payment Summary</span>
+            <p className="text-sm text-[var(--text)] mt-1">Paid: {fmt(payment.paidAmount)} · Due: {fmt(payment.balanceDue)}</p>
+            {payment.changeDue > 0 && <p className="text-sm text-[var(--accent-ink)]">Change: {fmt(payment.changeDue)}</p>}
+          </div>
+        </div>
+
         <label className="space-y-1 block">
           <span className="label-text">Notes</span>
           <input className="input-field" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Optional" />
@@ -144,6 +178,33 @@ export default function ShopOrders() {
 
         <button type="submit" className="btn-primary">Save Order</button>
       </form>
+
+      {lastOrder && (
+        <section className="card print:bg-white" id="last-shop-receipt">
+          <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+            <div>
+              <h2 className="text-lg font-bold text-[var(--text)]">Receipt Ready</h2>
+              <p className="text-sm text-[var(--text-muted)]">{lastOrder.orderNumber} · {lastOrder.customerName}</p>
+            </div>
+            <button type="button" className="btn-secondary text-sm" onClick={() => window.print()}>Print Receipt</button>
+          </div>
+          <div className="space-y-2 text-sm">
+            {lastOrder.lineItems.map((item) => (
+              <div key={`${lastOrder.id}-${item.productId}`} className="flex justify-between gap-3">
+                <span>{item.productName} × {item.quantity} {item.unit}</span>
+                <span className="font-semibold">{fmt(item.subtotal)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 pt-3 border-t text-sm space-y-1" style={{ borderColor: 'var(--border)' }}>
+            <p className="flex justify-between"><span>Total</span><strong>{fmt(lastOrder.total)}</strong></p>
+            <p className="flex justify-between"><span>Payment</span><span>{paymentMethodLabel(lastOrder.paymentMethod)}</span></p>
+            <p className="flex justify-between"><span>Paid</span><span>{fmt(lastOrder.paidAmount)}</span></p>
+            <p className="flex justify-between"><span>Balance due</span><span>{fmt(lastOrder.balanceDue)}</span></p>
+            {lastOrder.changeDue > 0 && <p className="flex justify-between"><span>Change</span><span>{fmt(lastOrder.changeDue)}</span></p>}
+          </div>
+        </section>
+      )}
 
       <section className="card">
         <h2 className="text-lg font-bold text-[var(--text)] mb-3">Recent Orders</h2>
@@ -159,6 +220,7 @@ export default function ShopOrders() {
                   <div>
                     <p className="font-bold text-[var(--text)]">{order.orderNumber} - {order.customerName}</p>
                     <p className="text-xs text-[var(--text-muted)]">{new Date(order.date).toLocaleDateString('en-IN')} - {order.lineItems.length} line items</p>
+                    <p className="text-xs text-[var(--text-muted)]">{paymentMethodLabel(order.paymentMethod)} · {order.paymentStatus}{order.balanceDue > 0 ? ` · Due ${fmt(order.balanceDue)}` : ''}</p>
                   </div>
                   <p className="font-bold text-[var(--accent-ink)]">{fmt(order.total)}</p>
                 </div>

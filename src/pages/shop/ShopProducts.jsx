@@ -5,6 +5,11 @@ import { useFarmInventory } from '../../hooks/useFarmInventory'
 import { useEggInventory } from '../../hooks/useEggInventory'
 import { EGG_UNITS, fromEggPieces, toEggPieces } from '../../utils/eggInventory'
 import { useConfirm } from '../../components/ui'
+import {
+  SHOP_PRODUCT_TEMPLATE_GROUPS,
+  buildShopProductFromTemplate,
+  filterMissingTemplates,
+} from '../../shop/shopProductTemplates'
 
 const EMPTY_PRODUCT = {
   name: '',
@@ -17,6 +22,8 @@ const EMPTY_PRODUCT = {
   sourceType: 'manual',
   sourceInventoryItemId: '',
   sourceUnit: '',
+  batchNumber: '',
+  expiryDate: '',
 }
 
 function sourceOptions(farmInventory) {
@@ -61,7 +68,39 @@ export default function ShopProducts() {
       sourceType: product.sourceType,
       sourceInventoryItemId: product.sourceInventoryItemId || '',
       sourceUnit: product.sourceUnit || product.unit,
+      batchNumber: product.batchNumber || '',
+      expiryDate: product.expiryDate || '',
     })
+  }
+
+  async function createFromTemplate(template) {
+    setFormError('')
+    setMessage('')
+    try {
+      await createProduct(buildShopProductFromTemplate(template))
+      setMessage(`${template.name} product template added.`)
+    } catch (err) {
+      setFormError(err.message || 'Failed to add template.')
+    }
+  }
+
+  async function createTemplateGroup(group) {
+    const templates = filterMissingTemplates(group.templates, products)
+    if (templates.length === 0) {
+      setMessage(`${group.label} templates are already in your catalog.`)
+      return
+    }
+
+    setFormError('')
+    setMessage('')
+    try {
+      for (const template of templates) {
+        await createProduct(buildShopProductFromTemplate(template))
+      }
+      setMessage(`${templates.length} ${group.label.toLowerCase()} template(s) added.`)
+    } catch (err) {
+      setFormError(err.message || 'Failed to add template group.')
+    }
   }
 
   async function handleSubmit(event) {
@@ -79,6 +118,8 @@ export default function ShopProducts() {
       lowStockThreshold: Number(form.lowStockThreshold) || 0,
       sourceInventoryItemId: form.sourceType === 'farmInventory' ? form.sourceInventoryItemId : null,
       sourceUnit: form.sourceUnit || form.unit,
+      batchNumber: form.batchNumber.trim(),
+      expiryDate: form.expiryDate,
     }
 
     try {
@@ -150,6 +191,43 @@ export default function ShopProducts() {
         </div>
       )}
 
+      <section className="card space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="text-lg font-bold text-[var(--text)]">Quick Product Templates</h2>
+            <p className="text-sm text-[var(--text-muted)]">Add ready-made egg, meat, live bird, processed, and byproduct items to your shop catalog.</p>
+          </div>
+        </div>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+          {SHOP_PRODUCT_TEMPLATE_GROUPS.map((group) => {
+            const missingTemplates = filterMissingTemplates(group.templates, products)
+            return (
+              <div key={group.id} className="rounded-lg p-3 space-y-2" style={{ background: 'var(--surface-2)' }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-[var(--text)]">{group.label}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{group.description}</p>
+                  </div>
+                  <button type="button" className="btn-secondary text-xs" onClick={() => createTemplateGroup(group)} disabled={missingTemplates.length === 0}>
+                    Add all
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {group.templates.map((template) => {
+                    const exists = !missingTemplates.some((entry) => entry.id === template.id)
+                    return (
+                      <button key={template.id} type="button" className="btn-secondary text-xs" onClick={() => createFromTemplate(template)} disabled={exists}>
+                        {exists ? '✓ ' : '+ '}{template.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
       <div className="grid gap-4 xl:grid-cols-[1fr_0.75fr]">
         <form onSubmit={handleSubmit} className="card space-y-3">
           <div className="flex items-center justify-between gap-3">
@@ -188,6 +266,14 @@ export default function ShopProducts() {
             <label className="space-y-1">
               <span className="label-text">Low Stock Alert</span>
               <input className="input-field" type="number" min="0" step="any" value={form.lowStockThreshold} onChange={(event) => setForm((current) => ({ ...current, lowStockThreshold: event.target.value }))} />
+            </label>
+            <label className="space-y-1">
+              <span className="label-text">Batch / Lot No.</span>
+              <input className="input-field" value={form.batchNumber} onChange={(event) => setForm((current) => ({ ...current, batchNumber: event.target.value }))} placeholder="Optional" />
+            </label>
+            <label className="space-y-1">
+              <span className="label-text">Expiry Date</span>
+              <input className="input-field" type="date" value={form.expiryDate} onChange={(event) => setForm((current) => ({ ...current, expiryDate: event.target.value }))} />
             </label>
             <label className="space-y-1">
               <span className="label-text">Source</span>
@@ -257,6 +343,7 @@ export default function ShopProducts() {
                   <th className="py-2 pr-3">Product</th>
                   <th className="py-2 pr-3">Stock</th>
                   <th className="py-2 pr-3">Price</th>
+                  <th className="py-2 pr-3">Batch / Expiry</th>
                   <th className="py-2 pr-3">Source</th>
                   <th className="py-2 pr-3"></th>
                 </tr>
@@ -267,6 +354,12 @@ export default function ShopProducts() {
                     <td className="py-3 pr-3 font-semibold text-[var(--text)]">{product.name}</td>
                     <td className="py-3 pr-3">{product.stockQty} {product.unit}</td>
                     <td className="py-3 pr-3">{fmt(product.sellingPrice)}</td>
+                    <td className="py-3 pr-3 text-xs text-[var(--text-muted)]">
+                      <span className="block">{product.batchNumber || 'No batch'}</span>
+                      <span className={product.expiryDate && new Date(product.expiryDate) < new Date() ? 'text-red-600 font-semibold' : ''}>
+                        {product.expiryDate ? `Exp: ${new Date(product.expiryDate).toLocaleDateString('en-IN')}` : 'No expiry'}
+                      </span>
+                    </td>
                     <td className="py-3 pr-3">{product.sourceType}</td>
                     <td className="py-3 pr-3 text-right">
                       <button type="button" className="btn-secondary text-xs mr-2" onClick={() => editProduct(product)}>Edit</button>

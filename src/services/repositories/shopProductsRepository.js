@@ -45,6 +45,8 @@ export function normalizeShopProduct(product) {
     sourceType: product.sourceType || 'manual',
     sourceInventoryItemId: product.sourceInventoryItemId || null,
     sourceUnit: product.sourceUnit || product.unit || 'piece',
+    batchNumber: product.batchNumber || '',
+    expiryDate: product.expiryDate || '',
     active: product.active !== false,
     createdAt: timestampToIso(product.createdAt, product.clientCreatedAt || null),
     updatedAt: timestampToIso(product.updatedAt, product.clientUpdatedAt || null),

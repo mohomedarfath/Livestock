@@ -3,6 +3,7 @@ import { isFirebaseConfigured } from '../../lib/env'
 import { collection, doc, getDocs, orderBy, query, runTransaction } from 'firebase/firestore'
 import { salesRepository } from './salesRepository'
 import { normalizeShopProduct } from './shopProductsRepository'
+import { calculateOrderPayment, normalizePaymentMethod } from '../../shop/shopOrderPayments'
 import { timestampToIso, writeTimestamps } from './firestoreOffline'
 
 const ORDERS_KEY = 'livestocktrack_shop_orders'
@@ -49,6 +50,8 @@ function normalizeLineItem(item) {
 function normalizeOrder(order) {
   const lineItems = Array.isArray(order.lineItems) ? order.lineItems.map(normalizeLineItem) : []
   const total = Math.max(0, normalizeNumber(order.total, lineItems.reduce((sum, item) => sum + item.subtotal, 0)))
+  const paymentMethod = normalizePaymentMethod(order.paymentMethod)
+  const payment = calculateOrderPayment({ total, paidAmount: order.paidAmount ?? total, paymentMethod })
   return {
     id: order.id || nextId(),
     orderNumber: order.orderNumber || `ORD-${String(Date.now()).slice(-6)}`,
@@ -57,7 +60,11 @@ function normalizeOrder(order) {
     date: order.date || new Date().toISOString().split('T')[0],
     lineItems,
     total,
-    paymentMethod: order.paymentMethod || 'cash',
+    paymentMethod,
+    paidAmount: payment.paidAmount,
+    balanceDue: payment.balanceDue,
+    changeDue: payment.changeDue,
+    paymentStatus: payment.paymentStatus,
     notes: order.notes || '',
     createdAt: timestampToIso(order.createdAt, order.clientCreatedAt || null),
   }
@@ -85,7 +92,7 @@ function buildMirrorSaleFields(order) {
     totalPrice: order.total,
     buyerName: order.customerName,
     date: order.date,
-    notes: `Shop order ${order.orderNumber}`,
+    notes: `Shop order ${order.orderNumber} (${order.paymentStatus}, paid ${order.paidAmount}, due ${order.balanceDue})`,
   }
 }
 
