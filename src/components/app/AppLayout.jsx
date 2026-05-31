@@ -10,10 +10,10 @@ import { useInstallPrompt } from '../../pwa/useInstallPrompt'
 import { useOrganizationSettings } from '../../hooks/useOrganizationSettings'
 import { Badge, CommandPalette, IconButton, Skeleton } from '../ui'
 import AnimalTypeSwitcher from '../animal/AnimalTypeSwitcher'
-import { useAnimalType } from '../../animal/AnimalTypeContext'
+import { useAnimalType } from '../../animal/useAnimalType'
 import { animalizeModule, isModuleEnabledForAnimalType } from '../../animal/animalTypes'
 import WorkspaceSwitcher from '../workspace/WorkspaceSwitcher'
-import { useWorkspaceMode } from '../../workspace/WorkspaceModeContext'
+import { useWorkspaceMode } from '../../workspace/useWorkspaceMode'
 import { isModuleEnabledForWorkspace } from '../../workspace/workspaceModes'
 
 const NAV_GROUP_ORDER = ['Farm Operations', 'Shop', 'Health & Feed', 'Inventory', 'Finance', 'People', 'Administration']

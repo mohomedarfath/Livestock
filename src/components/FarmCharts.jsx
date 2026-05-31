@@ -11,7 +11,7 @@ import { useEmployeeActivities } from '../hooks/useEmployeeActivities'
 import { useFeedPurchases } from '../hooks/useFeedPurchases'
 import { useExpenses } from '../hooks/useExpenses'
 import { ChartCard } from './ui'
-import { useAnimalType } from '../animal/AnimalTypeContext'
+import { useAnimalType } from '../animal/useAnimalType'
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 function daysAgo(n) {

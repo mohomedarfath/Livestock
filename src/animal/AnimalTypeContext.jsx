@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useOrganizationSettings } from '../hooks/useOrganizationSettings'
 import {
   DEFAULT_ENABLED_ANIMAL_TYPES,
@@ -6,9 +6,9 @@ import {
   normalizeEnabledAnimalTypes,
   selectionOptionsFor,
 } from './animalTypes'
+import { AnimalTypeContext } from './AnimalTypeContextValue'
 
 const STORAGE_KEY = 'livestocktrack_selected_animal_type'
-const AnimalTypeContext = createContext(null)
 
 function getStoredSelection() {
   try {
@@ -73,12 +73,4 @@ export function AnimalTypeProvider({ children }) {
       {children}
     </AnimalTypeContext.Provider>
   )
-}
-
-export function useAnimalType() {
-  const value = useContext(AnimalTypeContext)
-  if (!value) {
-    throw new Error('useAnimalType must be used inside AnimalTypeProvider')
-  }
-  return value
 }

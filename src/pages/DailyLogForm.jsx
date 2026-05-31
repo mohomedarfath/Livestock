@@ -4,7 +4,7 @@ import { dailyLogRepository } from '../services/repositories/dailyLogRepository'
 import { eggInventoryRepository } from '../services/repositories/eggInventoryRepository'
 import { useTenant } from '../context/TenantContext'
 import { useFlocks } from '../hooks/useFlocks'
-import { useAnimalType } from '../animal/AnimalTypeContext'
+import { useAnimalType } from '../animal/useAnimalType'
 
 const DRAFT_KEY = 'daily-log-form'
 const LOG_CACHE_KEY = 'clucktrack_logs'

@@ -6,7 +6,7 @@ import EmployeeDashboard from '../../pages/employee/EmployeeDashboard'
 import AccountantDashboard from '../../pages/accountant/AccountantDashboard'
 import ShopDashboard from '../../pages/shop/ShopDashboard'
 import { MODULE_PATH_BY_ID } from '../../app/modules'
-import { useWorkspaceMode } from '../../workspace/WorkspaceModeContext'
+import { useWorkspaceMode } from '../../workspace/useWorkspaceMode'
 
 export default function RoleDashboard() {
   const navigate = useNavigate()

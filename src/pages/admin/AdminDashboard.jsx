@@ -15,7 +15,7 @@ import { useOrganizationSettings } from '../../hooks/useOrganizationSettings'
 import { useEmployees } from '../../hooks/useEmployees'
 import { useFlocks } from '../../hooks/useFlocks'
 import { useEmployeeActivities } from '../../hooks/useEmployeeActivities'
-import { useAnimalType } from '../../animal/AnimalTypeContext'
+import { useAnimalType } from '../../animal/useAnimalType'
 
 function quickActions(details) {
   return [

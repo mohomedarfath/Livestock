@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useFlocks } from '../hooks/useFlocks'
 import { useConfirm } from '../components/ui'
-import { useAnimalType } from '../animal/AnimalTypeContext'
+import { useAnimalType } from '../animal/useAnimalType'
 
 // ── Breed data (from metrics database) ────────────────────────────────────────
 const BREEDS = [

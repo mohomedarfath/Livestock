@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useWorkspaceMode } from '../../workspace/WorkspaceModeContext'
+import { useWorkspaceMode } from '../../workspace/useWorkspaceMode'
 import { WORKSPACE_MODES } from '../../workspace/workspaceModes'
 
 export default function WorkspaceSwitcher() {

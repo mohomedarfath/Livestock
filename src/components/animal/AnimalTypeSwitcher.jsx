@@ -1,4 +1,4 @@
-import { useAnimalType } from '../../animal/AnimalTypeContext'
+import { useAnimalType } from '../../animal/useAnimalType'
 
 export default function AnimalTypeSwitcher() {
   const {

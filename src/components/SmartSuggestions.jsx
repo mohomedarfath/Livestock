@@ -4,7 +4,7 @@ import { useEmployeeActivities } from '../hooks/useEmployeeActivities'
 import { useFlocks } from '../hooks/useFlocks'
 import { useExpenses } from '../hooks/useExpenses'
 import { useBudgets } from '../hooks/useBudgets'
-import { useAnimalType } from '../animal/AnimalTypeContext'
+import { useAnimalType } from '../animal/useAnimalType'
 
 // Generate smart, actionable tips from farm data
 function buildSuggestions(role, { employees, activities, flocks, expenses, budgets, animalTypeDetails }) {

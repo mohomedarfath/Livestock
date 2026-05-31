@@ -1,10 +1,10 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTenant } from '../context/TenantContext'
 import { workspacesForRole } from '../app/accessControl'
 import { WORKSPACE_MODES } from './workspaceModes'
+import { WorkspaceModeContext } from './WorkspaceModeContextValue'
 
 const STORAGE_KEY = 'livestocktrack_workspace_mode'
-const WorkspaceModeContext = createContext(null)
 
 function getStoredMode() {
   try {
@@ -63,12 +63,4 @@ export function WorkspaceModeProvider({ children }) {
       {children}
     </WorkspaceModeContext.Provider>
   )
-}
-
-export function useWorkspaceMode() {
-  const value = useContext(WorkspaceModeContext)
-  if (!value) {
-    throw new Error('useWorkspaceMode must be used inside WorkspaceModeProvider')
-  }
-  return value
 }
