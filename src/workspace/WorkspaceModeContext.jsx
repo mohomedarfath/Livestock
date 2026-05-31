@@ -28,10 +28,10 @@ function normalizeMode(mode, availableModes) {
 }
 
 export function WorkspaceModeProvider({ children }) {
-  const { currentRole } = useTenant()
+  const { currentRole, roleDefinitions } = useTenant()
   const availableWorkspaces = useMemo(
-    () => workspacesForRole(currentRole).filter((mode) => Boolean(WORKSPACE_MODES[mode])),
-    [currentRole]
+    () => workspacesForRole(currentRole, roleDefinitions).filter((mode) => Boolean(WORKSPACE_MODES[mode])),
+    [currentRole, roleDefinitions]
   )
   const [storedMode, setStoredMode] = useState(getStoredMode)
   const workspaceMode = normalizeMode(storedMode || availableWorkspaces[0], availableWorkspaces)

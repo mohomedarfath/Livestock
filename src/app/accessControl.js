@@ -47,9 +47,20 @@ export const SYSTEM_ROLE_META = {
   },
 }
 
-export function workspacesForRole(roleKey) {
-  if (['shop_manager', 'cashier'].includes(roleKey)) return ['shop']
-  if (['admin', 'manager', 'accountant', 'super_admin'].includes(roleKey)) return ['farm', 'shop']
+function normalizeRoleKey(roleKey) {
+  return String(roleKey || '').replace(/[-_\s]/g, '').toLowerCase()
+}
+
+function resolveSystemRoleKey(roleKey) {
+  const normalizedRoleKey = normalizeRoleKey(roleKey)
+  return SYSTEM_ROLE_ORDER.find((systemRole) => normalizeRoleKey(systemRole) === normalizedRoleKey) || null
+}
+
+export function workspacesForRole(roleKey, roleDefinitions = []) {
+  const roleDefinition = resolveRoleDefinition(roleKey, roleDefinitions)
+  const baseRoleKey = roleDefinition?.baseRole || resolveSystemRoleKey(roleKey) || roleKey
+  if (['shop_manager', 'cashier'].includes(baseRoleKey)) return ['shop']
+  if (['admin', 'manager', 'accountant', 'super_admin'].includes(baseRoleKey)) return ['farm', 'shop']
   return ['farm']
 }
 
@@ -104,9 +115,8 @@ export function canRoleAccessModule(roleKey, moduleId, roleDefinitions) {
   const roleDefinition = resolveRoleDefinition(roleKey, roleDefinitions)
   if (roleDefinition?.moduleIds?.includes(moduleId)) return true
   if (roleDefinition?.baseRole && MODULE_BY_ID[moduleId]?.roles?.includes(roleDefinition.baseRole)) return true
-  const normalizedRoleKey = String(roleKey).replace(/[-_\s]/g, '').toLowerCase()
-  const inferredSystemRole = SYSTEM_ROLE_ORDER.find((systemRole) => normalizedRoleKey.includes(systemRole))
-  if (inferredSystemRole && MODULE_BY_ID[moduleId]?.roles?.includes(inferredSystemRole)) return true
+  const resolvedSystemRole = resolveSystemRoleKey(roleKey)
+  if (resolvedSystemRole && MODULE_BY_ID[moduleId]?.roles?.includes(resolvedSystemRole)) return true
   return Boolean(MODULE_BY_ID[moduleId]?.roles?.includes(roleKey))
 }
 
