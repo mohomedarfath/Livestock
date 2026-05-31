@@ -5,11 +5,6 @@ import { useFarmInventory } from '../../hooks/useFarmInventory'
 import { useEggInventory } from '../../hooks/useEggInventory'
 import { EGG_UNITS, fromEggPieces, toEggPieces } from '../../utils/eggInventory'
 import { useConfirm } from '../../components/ui'
-import {
-  SHOP_PRODUCT_TEMPLATE_GROUPS,
-  buildShopProductFromTemplate,
-  filterMissingTemplates,
-} from '../../shop/shopProductTemplates'
 
 const EMPTY_PRODUCT = {
   name: '',
@@ -73,35 +68,6 @@ export default function ShopProducts() {
     })
   }
 
-  async function createFromTemplate(template) {
-    setFormError('')
-    setMessage('')
-    try {
-      await createProduct(buildShopProductFromTemplate(template))
-      setMessage(`${template.name} product template added.`)
-    } catch (err) {
-      setFormError(err.message || 'Failed to add template.')
-    }
-  }
-
-  async function createTemplateGroup(group) {
-    const templates = filterMissingTemplates(group.templates, products)
-    if (templates.length === 0) {
-      setMessage(`${group.label} templates are already in your catalog.`)
-      return
-    }
-
-    setFormError('')
-    setMessage('')
-    try {
-      for (const template of templates) {
-        await createProduct(buildShopProductFromTemplate(template))
-      }
-      setMessage(`${templates.length} ${group.label.toLowerCase()} template(s) added.`)
-    } catch (err) {
-      setFormError(err.message || 'Failed to add template group.')
-    }
-  }
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -190,43 +156,6 @@ export default function ShopProducts() {
           {message || formError || error}
         </div>
       )}
-
-      <section className="card space-y-3">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <h2 className="text-lg font-bold text-[var(--text)]">Quick Product Templates</h2>
-            <p className="text-sm text-[var(--text-muted)]">Add ready-made egg, meat, live bird, processed, and byproduct items to your shop catalog.</p>
-          </div>
-        </div>
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-          {SHOP_PRODUCT_TEMPLATE_GROUPS.map((group) => {
-            const missingTemplates = filterMissingTemplates(group.templates, products)
-            return (
-              <div key={group.id} className="rounded-lg p-3 space-y-2" style={{ background: 'var(--surface-2)' }}>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-[var(--text)]">{group.label}</p>
-                    <p className="text-xs text-[var(--text-muted)]">{group.description}</p>
-                  </div>
-                  <button type="button" className="btn-secondary text-xs" onClick={() => createTemplateGroup(group)} disabled={missingTemplates.length === 0}>
-                    Add all
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {group.templates.map((template) => {
-                    const exists = !missingTemplates.some((entry) => entry.id === template.id)
-                    return (
-                      <button key={template.id} type="button" className="btn-secondary text-xs" onClick={() => createFromTemplate(template)} disabled={exists}>
-                        {exists ? '✓ ' : '+ '}{template.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </section>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_0.75fr]">
         <form onSubmit={handleSubmit} className="card space-y-3">
